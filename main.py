@@ -1,20 +1,12 @@
-# CS445 Programming Assignment #1
+# CS445 Term Project
 # Christopher Juncker
 #
-# "For this homework you will implement a two-layer neural network (i.e, one hidden-layer) to
-# "perform the handwritten digit recognition task of Homework 1. Please write your own neural
-# "network code; don’t use code written by others, though you can refer to other code if you
-# "need help understanding the algorithm. You may use whatever programming language you prefer.
+# The end goal of this project is to create a neural network which can transform
+# one type of sound to another.
 #
 #
-# MNIST data in CSV format:
-# https://pjreddie.com/projects/mnist-in-csv/
-#
-# Data files in data/ folder:
-#   mnist_train.csv
-#   mnist_test.csv
-# (Not included in commit to save space)
-#
+# todo: create fake dataset (pairs of data)
+# todo: modify network to have an equal number of input and output nodes
 #
 
 import numpy as np
@@ -39,10 +31,10 @@ MAX_EPOCHS = 100
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 100
+N = 20
 
 
-# class for loading and preprocessing MNIST data
+# class for loading and preprocessing data
 # data is contained in a numpy array
 class Data:
     def __init__(self):
