@@ -9,15 +9,11 @@
 # todo: modify network to have an equal number of input and output nodes
 #
 
+import os
 import numpy as np
-from pandas import read_csv
 from matplotlib import pyplot as plt
 from math import exp
-
-# set some data caps since this takes so long
-# 0 = no cap
-MAX_TRAIN = 0  # max 60,000
-MAX_TEST = 0  # max 10,000
+import scipy.io.wavfile as wf
 
 
 # "Set the learning rate to 0.1 and the momentum to 0.9.
@@ -26,7 +22,6 @@ MOMENTUM = 0.9
 
 # "Train your network for 50 epochs"
 MAX_EPOCHS = 100
-
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
@@ -38,43 +33,66 @@ N = 20
 # data is contained in a numpy array
 class Data:
     def __init__(self):
-        self.TRAIN = "data/mnist_train.csv"
-        self.TEST = "data/mnist_test.csv"
-        self.training_data, self.training_truth = self.load_set(self.TRAIN)
-        self.testing_data, self.testing_truth = self.load_set(self.TEST)
 
-    def load_set(self, dataset):
-        print("Reading '" + dataset + "' data set...")
-        data = read_csv(dataset).to_numpy(dtype="float")
-        return self.preprocess(data)
+        # 1. read in the audio files
 
-    # "Preprocessing: Scale each data value to be between 0 and 1.
-    # "(i.e., divide each value by 255, which is the maximum value in the original data)
-    # "This will help keep the weights from getting too large.
-    @staticmethod
-    def preprocess(data):
-        max_value = 255
-        ground_truth = np.empty(len(data))
-        print("Preprocessing data...")
-        # iterating one image at a time
-        for i in range(len(data)):
-            # save the true value
-            ground_truth[i] = data[i][0]
-            # set the bias
-            data[i][0] = max_value  # (this will end up as 1)
+        self.SINE_DIR = "audio/sine"  # the sine wave is the input
+        self.SQUARE_DIR = "audio/square"  # the square wave is the ground truth
 
-        # now it is safe to normalize ALL the image data at once
-        data /= max_value
-        return data, ground_truth
+        files = os.listdir(self.SINE_DIR)
+        # self.sine = [np.empty(0) * len(files)]
+        # self.square = [np.empty(0) for _ in range(len(files))]  # same?
+        self.sine = np.empty((0, 500))
+        self.square = np.empty((0, 500))
 
+        for i, file in enumerate(files):
+            with open(os.path.join(self.SINE_DIR, file), 'r') as f:
+                # self.sine[i] = wf.read(f)[:500]  # limit to first 500 samples for initial tests
+                np.append(self.sine, wf.read(f)[0:500])
+
+            with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
+                # self.square[i] = wf.read(f)[:500]
+                np.append(self.square, wf.read(f)[0:500])
+
+        # 2. preprocess and augment the data
+        self.preprocess()
+        self.augment()
+
+        # 3. split the data into a testing and training set
+        self.training_data, self.training_truth, \
+            self.testing_data, self.testing_truth = self.test_train_split()
+
+    def test_train_split(self):
+        # randomly shuffle the input and truth arrays (together)
+        length = self.sine.shape[0]
+        indices = np.arange(length)
+        np.random.shuffle(indices)
+        self.sine = self.sine[indices]
+        self.square = self.square[indices]
+
+        # perform an 80 / 20 split on the shuffled data
+        split = int(length*0.8)
+        training_data = self.sine[0:split]
+        testing_data = self.sine[split:]
+        training_truth = self.square[0:split]
+        testing_truth = self.square[split:]
+
+        return training_data, training_truth, testing_data, testing_truth
+
+    # Preprocessing (not yet implemented)
+    def preprocess(self):
+        return
+
+    # Augmentation (not yet implemented)
+    def augment(self):
+        return
+
+    # return the testing dataset
     def test(self):
-        if MAX_TEST:
-            return self.testing_data[0:MAX_TEST], self.testing_truth[0:MAX_TEST]
         return self.testing_data, self.testing_truth
 
+    # return the training dataset
     def train(self):
-        if MAX_TRAIN:
-            return self.training_data[0:MAX_TRAIN], self.training_truth[0:MAX_TRAIN]
         return self.training_data, self.training_truth
 
 
