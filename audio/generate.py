@@ -5,18 +5,21 @@
 import os
 import numpy as np
 import scipy.io.wavfile as wf
+from scipy import signal
 
 
 # class which creates samples based on specifications
 class Sampler:
     def __init__(self,
+                 wave="sine",  # or "square"
                  channels=1,
                  bits=16,
-                 amplitude=1.0,
+                 amplitude=0.5,
                  duration=1.0,
                  frequency=440,
                  sample_rate=48000,
                  ):
+        self.wave = wave
         self.channels = channels
         self.bits = bits
         self.amplitude = amplitude
@@ -32,10 +35,16 @@ class Sampler:
         self.generate_samples()
 
     def generate_samples(self):
-        self.samples = ((self.amplitude * self.max) *
-                        np.sin((2*np.pi) *
-                               (np.arange(self.sample_rate*self.duration)) *
-                               (self.frequency/self.sample_rate)))
+        if self.wave == "sine":
+            self.samples = ((self.amplitude * self.max) *
+                            np.sin((2*np.pi) *
+                                   (np.arange(self.sample_rate*self.duration)) *
+                                   (self.frequency/self.sample_rate)))
+
+        if self.wave == "square":
+            self.samples = ((self.amplitude * self.max) *
+                            signal.square(2 * np.pi * self.frequency *
+                                          (np.linspace(0, self.duration, self.sample_rate, endpoint=True))))
 
     # write the samples to disk
     def write(self, file="default.wav"):
@@ -47,8 +56,8 @@ def main():
     print("Generating Samples")
 
     # make the directories
-    dirs = ('sine/test',
-            'sine/train',
+    dirs = ('sine/',
+            'square/',
             )
     for d in dirs:
         exist = os.path.exists(d)
@@ -60,8 +69,13 @@ def main():
     # generate sine waves
     frequencies = np.fromfile("frequencies.txt", sep='\n')
     for i, f in enumerate(frequencies):
-        s = Sampler(frequency=f)
-        s.write(dirs[0] + "/" + str(i + 1) + ".wav")
+        s = Sampler("sine", frequency=f)
+        s.write(dirs[0] + str(i + 1) + ".wav")
+
+    # generate square waves
+    for i, f in enumerate(frequencies):
+        s = Sampler("square", frequency=f)
+        s.write(dirs[1] + str(i + 1) + ".wav")
 
 
 if __name__ == '__main__':
