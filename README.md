@@ -8,6 +8,9 @@ Spring 2022
 
 ### Generating Audio Data
 
+Before running the program, you will need to generate the datasets
+which will be used to train the network.
+
 #### Install
 ```shell
 > python -m pip install pyaudio scipy numpy
@@ -26,6 +29,9 @@ generated files at
 
 
 ### Training The Network
+
+After you have the datasets, all you need to do is run the program and
+let it train the network.
 
 #### Install
 ```shell
