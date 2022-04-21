@@ -42,17 +42,17 @@ class Data:
         files = os.listdir(self.SINE_DIR)
         # self.sine = [np.empty(0) * len(files)]
         # self.square = [np.empty(0) for _ in range(len(files))]  # same?
-        self.sine = np.empty((0, 500))
-        self.square = np.empty((0, 500))
+        self.sine = np.empty((0, 785))
+        self.square = np.empty((0, 785))
 
         for i, file in enumerate(files):
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
                 # self.sine[i] = wf.read(f)[:500]  # limit to first 500 samples for initial tests
-                np.append(self.sine, wf.read(f)[0:500])
+                np.append(self.sine, wf.read(f)[0:785])
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
                 # self.square[i] = wf.read(f)[:500]
-                np.append(self.square, wf.read(f)[0:500])
+                np.append(self.square, wf.read(f)[0:785])
 
         # 2. preprocess and augment the data
         self.preprocess()
@@ -96,15 +96,6 @@ class Data:
         return self.training_data, self.training_truth
 
 
-# very simple custom confusion matrix
-class ConfusionMatrix:
-    def __init__(self):
-        self.matrix = np.zeros((10, 10))
-
-    def insert(self, true, pred):
-        self.matrix[true][pred] += 1
-
-
 # "Your neural network will have 784 inputs, one hidden layer with
 # "n hidden units (where n is a parameter of your program), and 10 output units.
 class NeuralNetwork:
@@ -120,18 +111,20 @@ class NeuralNetwork:
         # input layer (dot) hidden layer weights:   1 x (N + 1)
         #
         # hidden layer:                             1 x (N + 1)
-        # output layer weights:                     (N + 1) x 10
-        # hidden layer (dot) output layer weights:  1 x 10
+        # output layer weights:                     (N + 1) x 785
+        # hidden layer (dot) output layer weights:  1 x 785
+        self.input_len = 785
+        self.output_len = 785
         #
         #
         # "Choose small random initial weights, 𝑤! ∈ [−.05, .05]
-        self.hidden_layer_weights = np.random.uniform(-0.05, 0.05, (785, N + 1))
-        self.hidden_layer_weights_change = np.zeros((785, N + 1))  # save momentum
+        self.hidden_layer_weights = np.random.uniform(-0.05, 0.05, (self.input_len, N + 1))
+        self.hidden_layer_weights_change = np.zeros((self.input_len, N + 1))  # save momentum
         self.hidden_layer = np.zeros((N+1))
         self.hidden_layer[0] = 1  # bias
-        self.output_layer_weights = np.random.uniform(-0.05, 0.05, (N+1, 10))
-        self.output_layer_weights_change = np.zeros((N+1, 10))  # save momentum
-        self.output_layer = np.zeros(10)
+        self.output_layer_weights = np.random.uniform(-0.05, 0.05, (N+1, self.output_len))
+        self.output_layer_weights_change = np.zeros((N + 1, self.output_len))  # save momentum
+        self.output_layer = np.zeros(self.output_len)
 
     # "The activation function for each hidden and output unit is the sigmoid function
     # σ(z) = 1 / ( 1 + e^(-z) )
@@ -142,8 +135,11 @@ class NeuralNetwork:
 
     # "Compute the accuracy on the training and test sets for this initial set of weights,
     # "to include in your plot. (Call this “epoch 0”.)
-    def compute_accuracy(self, data, freeze=False, matrix=None):
-        num_correct = 0
+    #
+    # data[0] = input data
+    # data[1] = truth data
+    def compute_accuracy(self, data, freeze=False):
+        accuracy = 0
 
         # for each item in the dataset
         for d, truth in zip(data[0], data[1]):
@@ -164,22 +160,17 @@ class NeuralNetwork:
             self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
             # print(self.output_layer)  # these are the right size as expected
 
-            # (for report)
-            # add our result to the confusion matrix
-            if matrix:
-                matrix.insert(int(np.argmax(self.output_layer)), int(truth), )  # x=pred, y=true
-
             # "If this is the correct prediction, don’t change the weights and
             # "go on to the next training example.
-            if truth == np.argmax(self.output_layer):
-                num_correct += 1
+            # if truth == np.argmax(self.output_layer):
+            #    num_correct += 1
 
             ##################
             # BACK-PROPAGATION
             ##################
 
-            elif not freeze:
-                output_error = np.empty(10)
+            if not freeze:
+                output_error = np.empty(self.output_len)
                 hidden_error = np.empty(N + 1)
 
                 # "For each output unit k, calculate error term δ_k
@@ -191,7 +182,12 @@ class NeuralNetwork:
                 for k, o_k in enumerate(self.output_layer):
                     # "Set the target value tk for output unit k to 0.9 if the input class is the kth class,
                     # "0.1 otherwise
-                    t_k = 0.9 if truth == k else 0.1  # had truth == o_k instead of truth == the index
+                    # t_k = 0.9 if truth == k else 0.1  # had truth == o_k instead of truth == the index
+
+                    # this has to change since this is not binary classification, truths are not 1 and 0
+                    # instead each index of the input has a corresponding truth index
+                    # need to reduce some of squares error across all output units
+                    t_k = truth[k]
 
                     error = o_k * (1 - o_k) * (t_k - o_k)
                     output_error[k] = error
@@ -212,7 +208,7 @@ class NeuralNetwork:
                 # w_kj = w_kj + Δw_kj
                 # Δw_kj = η * δ_k * h_j
                 self.output_layer_weights_change = \
-                    self.eta * (self.hidden_layer.reshape(N+1, 1) @ output_error.reshape(1, 10)) + \
+                    self.eta * (self.hidden_layer.reshape(N+1, 1) @ output_error.reshape(1, self.output_len)) + \
                     self.momentum * self.output_layer_weights_change
                 self.output_layer_weights += self.output_layer_weights_change
 
@@ -220,14 +216,24 @@ class NeuralNetwork:
                 # w_ji = w_ji + Δw_ji
                 # Δw_ji = η * δ_j * x_i
                 self.hidden_layer_weights_change = \
-                    self.eta * (d.reshape(785, 1) @ hidden_error.reshape(1, N+1)) + \
+                    self.eta * (d.reshape(self.input_len, 1) @ hidden_error.reshape(1, N+1)) + \
                     self.momentum * self.hidden_layer_weights_change
                 self.hidden_layer_weights += self.hidden_layer_weights_change
 
-        # return accuracy
-        return num_correct / len(data[0])
+            # calculate the output error again for now
+            # (just gonna need it regardless of "freeze" I think)
+            output_error = np.empty(self.output_len)
+            for k, o_k in enumerate(self.output_layer):
+                t_k = truth[k]
+                error = o_k * (1 - o_k) * (t_k - o_k)
+                output_error[k] = error
 
-    def run(self, data, matrix, epochs):
+            # add the error to the total accuracy
+            accuracy += np.sum(output_error)
+
+        return accuracy / len(data[0])
+
+    def run(self, data, epochs):
         train_accuracy = []
         test_accuracy = []
 
@@ -245,7 +251,7 @@ class NeuralNetwork:
             print("Testing Set:\tAccuracy:", "{:0.5f}".format(test_accuracy[i + 1]))
 
         # "Confusion matrix on the test set, after training has been completed.
-        self.compute_accuracy(data.train(), True, matrix)
+        # self.compute_accuracy(data.train(), True, matrix)
 
         return train_accuracy, test_accuracy
 
@@ -254,27 +260,14 @@ def main():
 
     d = Data()
     p = NeuralNetwork(ETA, MOMENTUM)
-    c = ConfusionMatrix()
 
-    results = p.run(d, c, MAX_EPOCHS)
+    results = p.run(d, MAX_EPOCHS)
 
     # plot the training / testing accuracy
     plt.plot(list(range(MAX_EPOCHS + 1)), results[0])
     plt.plot(list(range(MAX_EPOCHS + 1)), results[1])
     plt.xlim([0, MAX_EPOCHS])
     plt.ylim([0, 1])
-    plt.show()
-
-    # plot the confusion matrix
-    for i in range(10):
-        plt.plot([-0.5, 9.5], [i+0.5, i+0.5], i, color='xkcd:chocolate', linewidth=1)  # nice colors
-        plt.plot([i+0.5, i+0.5], [-0.5, 9.5], i, color='xkcd:chocolate', linewidth=1)
-        for j in range(10):
-            plt.scatter(i, j, s=(c.matrix[i][j] / 3), c="xkcd:fuchsia", marker="s")  # or chartreuse
-            plt.annotate(int(c.matrix[i][j]), (i, j))
-    plt.xlim([-0.5, 9.5])
-    plt.ylim([-0.5, 9.5])
-    plt.gca().invert_yaxis()
     plt.show()
 
 
