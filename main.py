@@ -5,8 +5,19 @@
 # one type of sound to another.
 #
 #
-# todo: create fake dataset (pairs of data)
-# todo: modify network to have an equal number of input and output nodes
+# done:
+#   create fake dataset (pairs of data)
+#   modify network to have an equal number of input and output nodes
+#
+# to do:
+#  SPEED
+#  modify sigmoid activation function to accept array instead of individual elements
+#  modify backpropagation loops to use numpy vector operations
+#
+#  permute data at each epoch
+#
+#  make sure network can at least overfit
+#
 #
 
 import os
@@ -15,9 +26,10 @@ from matplotlib import pyplot as plt
 from math import exp
 import scipy.io.wavfile as wf
 
-SAMPLES = 200
-OFFSET = 65
-OFFSET_LOOPS = 20
+SAMPLES = 100
+OFFSET = 61*4
+OFFSET_LOOPS = 1
+# dataset = 88*100 = 8800
 
 
 # "Set the learning rate to 0.1 and the momentum to 0.9.
@@ -25,7 +37,7 @@ ETA = 0.1
 MOMENTUM = 0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 100
+MAX_EPOCHS = 35
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
@@ -49,17 +61,16 @@ class Data:
 
         for i, file in enumerate(files):
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
-                # self.sine[i] = wf.read(f)[:500]  # limit to first 500 samples for initial tests
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
                     self.sine = np.append(self.sine,
-                                          samples[0 + j*OFFSET:SAMPLES + j * OFFSET].reshape(1, SAMPLES), axis=0)
+                                          samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
                     self.square = np.append(self.square,
-                                            samples[0 + j * OFFSET:SAMPLES + j * OFFSET].reshape(1, SAMPLES), axis=0)
+                                            samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
 
         # 2. preprocess and augment the data
         self.preprocess()
