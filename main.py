@@ -28,7 +28,7 @@ import scipy.io.wavfile as wf
 
 SAMPLES = 50
 OFFSET = 20  # 61*4
-OFFSET_LOOPS = 100
+OFFSET_LOOPS = 10
 # dataset = 88*100 = 8800
 
 
@@ -37,7 +37,7 @@ ETA = 0.1
 MOMENTUM = 0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 100
+MAX_EPOCHS = 200
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
@@ -65,14 +65,14 @@ class Data:
                 for j in range(OFFSET_LOOPS):
                     # self.sine = np.append(self.sine,
                     #                      samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
-                    self.sine[i*len(files) + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
+                    self.sine[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
                     # self.square = np.append(self.square,
                     #                        samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
-                    self.square[i*len(files) + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
+                    self.square[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
         # 2. preprocess and augment the data
         self.preprocess()
