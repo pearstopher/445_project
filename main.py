@@ -28,7 +28,7 @@ import scipy.io.wavfile as wf
 
 SAMPLES = 50
 OFFSET = 20  # 61*4
-OFFSET_LOOPS = 1000
+OFFSET_LOOPS = 100
 # dataset = 88*100 = 8800
 
 
@@ -56,21 +56,23 @@ class Data:
         self.SQUARE_DIR = "audio/square/"  # the square wave is the ground truth
 
         files = os.listdir(self.SINE_DIR)
-        self.sine = np.empty((0, SAMPLES))
-        self.square = np.empty((0, SAMPLES))
+        self.sine = np.empty((len(files)*OFFSET_LOOPS, SAMPLES))
+        self.square = np.empty((len(files)*OFFSET_LOOPS, SAMPLES))
 
         for i, file in enumerate(files):
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
-                    self.sine = np.append(self.sine,
-                                          samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
+                    # self.sine = np.append(self.sine,
+                    #                      samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
+                    self.sine[i*len(files) + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
-                    self.square = np.append(self.square,
-                                            samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
+                    # self.square = np.append(self.square,
+                    #                        samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
+                    self.square[i*len(files) + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
         # 2. preprocess and augment the data
         self.preprocess()
