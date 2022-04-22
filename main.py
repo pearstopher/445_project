@@ -15,18 +15,20 @@ from matplotlib import pyplot as plt
 from math import exp
 import scipy.io.wavfile as wf
 
+SAMPLES = 200
+
 
 # "Set the learning rate to 0.1 and the momentum to 0.9.
 ETA = 0.1
-MOMENTUM = 0.9
+MOMENTUM = 0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 100
+MAX_EPOCHS = 1000
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 20
+N = 10
 
 
 # class for loading and preprocessing data
@@ -36,23 +38,22 @@ class Data:
 
         # 1. read in the audio files
 
-        self.SINE_DIR = "audio/sine"  # the sine wave is the input
-        self.SQUARE_DIR = "audio/square"  # the square wave is the ground truth
+        self.SINE_DIR = "audio/sine/"  # the sine wave is the input
+        self.SQUARE_DIR = "audio/square/"  # the square wave is the ground truth
 
         files = os.listdir(self.SINE_DIR)
-        # self.sine = [np.empty(0) * len(files)]
-        # self.square = [np.empty(0) for _ in range(len(files))]  # same?
-        self.sine = np.empty((0, 785))
-        self.square = np.empty((0, 785))
+        self.sine = np.empty((0, SAMPLES))
+        self.square = np.empty((0, SAMPLES))
 
         for i, file in enumerate(files):
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
                 # self.sine[i] = wf.read(f)[:500]  # limit to first 500 samples for initial tests
-                np.append(self.sine, wf.read(f)[0:785])
+                _, samples = wf.read(f.name)
+                self.sine = np.append(self.sine, samples[0:SAMPLES].reshape(1, SAMPLES), axis=0)
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
-                # self.square[i] = wf.read(f)[:500]
-                np.append(self.square, wf.read(f)[0:785])
+                _, samples = wf.read(f.name)
+                self.square = np.append(self.square, samples[0:SAMPLES].reshape(1, SAMPLES), axis=0)
 
         # 2. preprocess and augment the data
         self.preprocess()
@@ -61,6 +62,11 @@ class Data:
         # 3. split the data into a testing and training set
         self.training_data, self.training_truth, \
             self.testing_data, self.testing_truth = self.test_train_split()
+
+        # samples = (self.training_data[40] * 2 ** 16 - 2 ** 15).astype(np.int16)
+        # wf.write("output1.wav", 48000, samples)
+        # samples = (self.training_truth[40] * 2 ** 16 - 2 ** 15).astype(np.int16)
+        # wf.write("output2.wav", 48000, samples)
 
     def test_train_split(self):
         # randomly shuffle the input and truth arrays (together)
@@ -72,15 +78,18 @@ class Data:
 
         # perform an 80 / 20 split on the shuffled data
         split = int(length*0.8)
-        training_data = self.sine[0:split]
-        testing_data = self.sine[split:]
-        training_truth = self.square[0:split]
-        testing_truth = self.square[split:]
+        training_data = self.sine[0:split, :]
+        testing_data = self.sine[split:, :]
+        training_truth = self.square[0:split, :]
+        testing_truth = self.square[split:, :]
 
         return training_data, training_truth, testing_data, testing_truth
 
-    # Preprocessing (not yet implemented)
+    # Preprocessing
     def preprocess(self):
+        # normalize data between 0-1
+        self.sine = (self.sine + 2**15) / 2**16
+        self.square = (self.square + 2**15) / 2**16
         return
 
     # Augmentation (not yet implemented)
@@ -113,8 +122,8 @@ class NeuralNetwork:
         # hidden layer:                             1 x (N + 1)
         # output layer weights:                     (N + 1) x 785
         # hidden layer (dot) output layer weights:  1 x 785
-        self.input_len = 785
-        self.output_len = 785
+        self.input_len = SAMPLES
+        self.output_len = SAMPLES
         #
         #
         # "Choose small random initial weights, 𝑤! ∈ [−.05, .05]
@@ -133,13 +142,20 @@ class NeuralNetwork:
         activation = 1 / (1 + exp(-value))
         return activation
 
+    # trying new activation functions
+    # @staticmethod
+    # def softplus(value):
+    #     # activation = np.log(1 + np.e**value)  # overflow baby
+    #     activation = np.log1p(np.exp(-np.abs(value))) + np.maximum(value, 0)
+    #    return activation
+
     # "Compute the accuracy on the training and test sets for this initial set of weights,
     # "to include in your plot. (Call this “epoch 0”.)
     #
     # data[0] = input data
     # data[1] = truth data
     def compute_accuracy(self, data, freeze=False):
-        accuracy = 0
+        sse_avg = 0
 
         # for each item in the dataset
         for d, truth in zip(data[0], data[1]):
@@ -152,12 +168,14 @@ class NeuralNetwork:
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
             self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
+            # self.hidden_layer = np.array([self.softplus(x) for x in self.hidden_layer])
             # print(self.hidden_layer)  # these are the right size as expected
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
             self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
+            # self.output_layer = np.array([self.softplus(x) for x in self.output_layer])
             # print(self.output_layer)  # these are the right size as expected
 
             # "If this is the correct prediction, don’t change the weights and
@@ -177,8 +195,6 @@ class NeuralNetwork:
                 # δ_k <- o_k (1 - o_k) (t_k - o_k)
                 #
                 # t = true value
-                # I am guessing -1 is true value when it's wrong
-                # and 1 is true value when its right
                 for k, o_k in enumerate(self.output_layer):
                     # "Set the target value tk for output unit k to 0.9 if the input class is the kth class,
                     # "0.1 otherwise
@@ -192,6 +208,11 @@ class NeuralNetwork:
                     error = o_k * (1 - o_k) * (t_k - o_k)
                     output_error[k] = error
 
+                    # switching from sigmoid to softplus
+                    # error = (1 / (np.e**(-o_k))) * (t_k - o_k)
+                    # error = self.sigmoid(o_k) * (t_k - o_k)
+                    # output_error[k] = error
+
                 # "for each hidden unit j, calculate error term δ_j (k = output units)
                 # δ_j <- h_j (1 - h_j) (Σ_k ( w_kj * δ_k ) )
                 for j, h_j in enumerate(self.hidden_layer):
@@ -202,6 +223,7 @@ class NeuralNetwork:
                         total += self.output_layer_weights[j][k] * output_error[k]
 
                     error = h_j * (1 - h_j) * total
+                    # error = self.sigmoid(h_j) * total
                     hidden_error[j] = error  # oops was appending still
 
                 # "Hidden to Output layer: For each weight w_kj
@@ -228,10 +250,16 @@ class NeuralNetwork:
                 error = o_k * (1 - o_k) * (t_k - o_k)
                 output_error[k] = error
 
-            # add the error to the total accuracy
-            accuracy += np.sum(output_error)
+            sse = 0
+            for a, b in zip(self.output_layer, truth):
+                sse += (a - b)**2
+            sse = sse**0.5
 
-        return accuracy / len(data[0])
+            # add the error to the total accuracy
+            # accuracy += np.sum(abs(output_error))
+            sse_avg += sse
+
+        return sse_avg / len(data[0])
 
     def run(self, data, epochs):
         train_accuracy = []
@@ -239,19 +267,16 @@ class NeuralNetwork:
 
         print("Epoch 0: ", end="")
         train_accuracy.append(self.compute_accuracy(data.train(), True))
-        test_accuracy.append(self.compute_accuracy(data.train(), True))
-        print("Training Set:\tAccuracy:", "{:0.5f}".format(train_accuracy[0]), end="\t")
-        print("Testing Set:\tAccuracy:", "{:0.5f}".format(test_accuracy[0]))
+        test_accuracy.append(self.compute_accuracy(data.test(), True))
+        print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[0]), end="\t")
+        print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[0]))
 
         for i in range(epochs):
             print("Epoch " + str(i + 1) + ": ", end="")
             train_accuracy.append(self.compute_accuracy(data.train()))
-            test_accuracy.append(self.compute_accuracy(data.train(), True))
-            print("Training Set:\tAccuracy:", "{:0.5f}".format(train_accuracy[i + 1]), end="\t")
-            print("Testing Set:\tAccuracy:", "{:0.5f}".format(test_accuracy[i + 1]))
-
-        # "Confusion matrix on the test set, after training has been completed.
-        # self.compute_accuracy(data.train(), True, matrix)
+            test_accuracy.append(self.compute_accuracy(data.test(), True))
+            print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[i + 1]), end="\t")
+            print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[i + 1]))
 
         return train_accuracy, test_accuracy
 
@@ -267,8 +292,14 @@ def main():
     plt.plot(list(range(MAX_EPOCHS + 1)), results[0])
     plt.plot(list(range(MAX_EPOCHS + 1)), results[1])
     plt.xlim([0, MAX_EPOCHS])
-    plt.ylim([0, 1])
+    # plt.ylim([0, 100])
     plt.show()
+
+    samples = (p.output_layer * 2 ** 16 - 2 ** 15).astype(np.int16)
+    wf.write("output1.wav", 48000, samples)
+
+    samples = (d.testing_truth[-1] * 2 ** 16 - 2 ** 15).astype(np.int16)
+    wf.write("output2.wav", 48000, samples)
 
 
 if __name__ == '__main__':
