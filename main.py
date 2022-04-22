@@ -28,8 +28,9 @@ import scipy.io.wavfile as wf
 
 SAMPLES = 50
 OFFSET = 20  # 61*4
-OFFSET_LOOPS = 10
-# dataset = 88*100 = 8800
+OFFSET_LOOPS = 1
+# 88*100 = 8800
+# 88*1000 = 88000 = 70400/17600
 
 
 # "Set the learning rate to 0.1 and the momentum to 0.9.
@@ -37,12 +38,12 @@ ETA = 0.1
 MOMENTUM = 0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 200
+MAX_EPOCHS = 10000
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 50
+N = 100
 
 
 # class for loading and preprocessing data
@@ -63,15 +64,11 @@ class Data:
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
-                    # self.sine = np.append(self.sine,
-                    #                      samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
                     self.sine[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
-                    # self.square = np.append(self.square,
-                    #                        samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES), axis=0)
                     self.square[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
         # 2. preprocess and augment the data
@@ -170,6 +167,10 @@ class NeuralNetwork:
     # data[1] = truth data
     def compute_accuracy(self, data, freeze=False):
         avg = 0
+
+        # randomly shuffle the input and truth arrays (together)
+        data = np.copy(data)
+        np.random.shuffle(data)
 
         # for each item in the dataset
         for d, truth in zip(data[0], data[1]):
