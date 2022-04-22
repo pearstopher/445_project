@@ -26,9 +26,9 @@ from matplotlib import pyplot as plt
 from math import exp
 import scipy.io.wavfile as wf
 
-SAMPLES = 100
-OFFSET = 61*4
-OFFSET_LOOPS = 1
+SAMPLES = 50
+OFFSET = 20  # 61*4
+OFFSET_LOOPS = 1000
 # dataset = 88*100 = 8800
 
 
@@ -37,12 +37,12 @@ ETA = 0.1
 MOMENTUM = 0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 35
+MAX_EPOCHS = 100
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 100
+N = 50
 
 
 # class for loading and preprocessing data
@@ -79,11 +79,6 @@ class Data:
         # 3. split the data into a testing and training set
         self.training_data, self.training_truth, \
             self.testing_data, self.testing_truth = self.test_train_split()
-
-        # samples = (self.training_data[40] * 2 ** 16 - 2 ** 15).astype(np.int16)
-        # wf.write("output1.wav", 48000, samples)
-        # samples = (self.training_truth[40] * 2 ** 16 - 2 ** 15).astype(np.int16)
-        # wf.write("output2.wav", 48000, samples)
 
     def test_train_split(self):
         # randomly shuffle the input and truth arrays (together)
@@ -172,7 +167,7 @@ class NeuralNetwork:
     # data[0] = input data
     # data[1] = truth data
     def compute_accuracy(self, data, freeze=False):
-        sse_avg = 0
+        avg = 0
 
         # for each item in the dataset
         for d, truth in zip(data[0], data[1]):
@@ -185,20 +180,12 @@ class NeuralNetwork:
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
             self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
-            # self.hidden_layer = np.array([self.softplus(x) for x in self.hidden_layer])
-            # print(self.hidden_layer)  # these are the right size as expected
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
             self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
-            # self.output_layer = np.array([self.softplus(x) for x in self.output_layer])
-            # print(self.output_layer)  # these are the right size as expected
 
-            # "If this is the correct prediction, don’t change the weights and
-            # "go on to the next training example.
-            # if truth == np.argmax(self.output_layer):
-            #    num_correct += 1
 
             ##################
             # BACK-PROPAGATION
@@ -225,19 +212,14 @@ class NeuralNetwork:
                     error = o_k * (1 - o_k) * (t_k - o_k)
                     output_error[k] = error
 
-                    # switching from sigmoid to softplus
-                    # error = (1 / (np.e**(-o_k))) * (t_k - o_k)
-                    # error = self.sigmoid(o_k) * (t_k - o_k)
-                    # output_error[k] = error
-
                 # "for each hidden unit j, calculate error term δ_j (k = output units)
                 # δ_j <- h_j (1 - h_j) (Σ_k ( w_kj * δ_k ) )
                 for j, h_j in enumerate(self.hidden_layer):
                     # calculate sum
-                    total = 0
-                    # print(self.output_layer)
-                    for k in range(len(self.output_layer)):
-                        total += self.output_layer_weights[j][k] * output_error[k]
+                    # total = 0
+                    # for k in range(len(self.output_layer)):
+                    #    total += self.output_layer_weights[j][k] * output_error[k]
+                    total = np.dot(self.output_layer_weights[j], output_error)
 
                     error = h_j * (1 - h_j) * total
                     # error = self.sigmoid(h_j) * total
@@ -259,26 +241,14 @@ class NeuralNetwork:
                     self.momentum * self.hidden_layer_weights_change
                 self.hidden_layer_weights += self.hidden_layer_weights_change
 
-            # calculate the output error again for now
-            # (just gonna need it regardless of "freeze" I think)
-            output_error = np.empty(self.output_len)
-            for k, o_k in enumerate(self.output_layer):
-                t_k = truth[k]
-                error = o_k * (1 - o_k) * (t_k - o_k)
-                output_error[k] = error
-
-            sse = 0
-            # for a, b in zip(self.output_layer, truth):
-            #    sse += (a - b)**2
-            # sse = sse**0.5
-            sse = np.sum(abs(self.output_layer - truth))
+            error = np.sum(abs(self.output_layer - truth))
 
             # add the error to the total accuracy
             # accuracy += np.sum(abs(output_error))
-            sse_avg += sse
+            avg += error
 
-        # for now, not SSE anymore, just E
-        return sse_avg / len(data[0])
+        # average error per data point (individual sample)
+        return avg / (len(data[0]) * SAMPLES)
 
     def run(self, data, epochs):
         train_accuracy = []
