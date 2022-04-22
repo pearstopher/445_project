@@ -23,12 +23,12 @@ ETA = 0.1
 MOMENTUM = 0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 1000
+MAX_EPOCHS = 100
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 10
+N = 50
 
 
 # class for loading and preprocessing data
@@ -251,14 +251,16 @@ class NeuralNetwork:
                 output_error[k] = error
 
             sse = 0
-            for a, b in zip(self.output_layer, truth):
-                sse += (a - b)**2
-            sse = sse**0.5
+            # for a, b in zip(self.output_layer, truth):
+            #    sse += (a - b)**2
+            # sse = sse**0.5
+            sse = np.sum(abs(self.output_layer - truth))
 
             # add the error to the total accuracy
             # accuracy += np.sum(abs(output_error))
             sse_avg += sse
 
+        # for now, not SSE anymore, just E
         return sse_avg / len(data[0])
 
     def run(self, data, epochs):
@@ -280,6 +282,35 @@ class NeuralNetwork:
 
         return train_accuracy, test_accuracy
 
+    def dump_wavs(self, data, prefix):
+        sse_avg = 0
+
+        # for each item in the dataset
+        for i, (d, truth) in enumerate(zip(data[0], data[1])):
+
+            #####################
+            # FORWARD PROPAGATION
+            #####################
+
+            # "For each node j in the hidden layer (i = input layer)
+            # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
+            self.hidden_layer = np.dot(d, self.hidden_layer_weights)
+            self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
+
+            # "For each node k in the output layer (j = hidden layer)
+            # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
+            self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
+            self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
+
+            samples = (d * 2 ** 16 - 2 ** 15).astype(np.int16)
+            wf.write("audio/gen/" + prefix + str(i) + "_a.wav", 48000, samples)
+
+            samples = (self.output_layer * 2 ** 16 - 2 ** 15).astype(np.int16)
+            wf.write("audio/gen/" + prefix + str(i) + "_b.wav", 48000, samples)
+
+            samples = (truth * 2 ** 16 - 2 ** 15).astype(np.int16)
+            wf.write("audio/gen/" + prefix + str(i) + "_c.wav", 48000, samples)
+
 
 def main():
 
@@ -288,18 +319,15 @@ def main():
 
     results = p.run(d, MAX_EPOCHS)
 
+    p.dump_wavs(d.train(), "train")
+    p.dump_wavs(d.test(), "test")
+
     # plot the training / testing accuracy
     plt.plot(list(range(MAX_EPOCHS + 1)), results[0])
     plt.plot(list(range(MAX_EPOCHS + 1)), results[1])
     plt.xlim([0, MAX_EPOCHS])
     # plt.ylim([0, 100])
     plt.show()
-
-    samples = (p.output_layer * 2 ** 16 - 2 ** 15).astype(np.int16)
-    wf.write("output1.wav", 48000, samples)
-
-    samples = (d.testing_truth[-1] * 2 ** 16 - 2 ** 15).astype(np.int16)
-    wf.write("output2.wav", 48000, samples)
 
 
 if __name__ == '__main__':
