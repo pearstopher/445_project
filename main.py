@@ -10,14 +10,13 @@
 #   modify network to have an equal number of input and output nodes
 #
 # to do:
-#  SPEED
-#  modify backpropagation loops to use numpy vector operations
-#
-#  permute data at each epoch
 #
 # figure out momentum, make sure it works
 #
-#  make sure network can at least overfit
+#  make sure network can at least over-fit
+#
+#  train on specific note (1-88)
+#  convert longer file using trained network
 #
 #
 
@@ -48,7 +47,7 @@ MAX_EPOCHS = 300
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 10
+N = 100
 
 
 # class for loading and preprocessing data
