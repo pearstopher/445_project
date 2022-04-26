@@ -47,7 +47,7 @@ MAX_EPOCHS = 300
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 100
+N = 10
 
 
 # class for loading and preprocessing data
