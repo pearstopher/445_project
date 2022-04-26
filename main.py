@@ -11,10 +11,11 @@
 #
 # to do:
 #  SPEED
-#  modify sigmoid activation function to accept array instead of individual elements
 #  modify backpropagation loops to use numpy vector operations
 #
 #  permute data at each epoch
+#
+# figure out momentum, make sure it works
 #
 #  make sure network can at least overfit
 #
@@ -27,8 +28,9 @@ from math import exp
 import scipy.io.wavfile as wf
 
 SAMPLES = 50
-OFFSET = 20  # 61*4
-OFFSET_LOOPS = 1
+# make sure OFFSET * OFFSET_LOOPS isn't bigger than data array
+OFFSET = 2000  # 20  # 61*4
+OFFSET_LOOPS = 2
 # 88*100 = 8800
 # 88*1000 = 88000 = 70400/17600
 
@@ -149,9 +151,9 @@ class NeuralNetwork:
     # "The activation function for each hidden and output unit is the sigmoid function
     # σ(z) = 1 / ( 1 + e^(-z) )
     @staticmethod
-    def sigmoid(value):
-        activation = 1 / (1 + exp(-value))
-        return activation
+    def sigmoid(array):
+        array = 1 / (1 + np.e ** (- array))
+        return array
 
     # trying new activation functions
     # @staticmethod
@@ -170,10 +172,19 @@ class NeuralNetwork:
 
         # randomly shuffle the input and truth arrays (together)
         data = np.copy(data)
-        np.random.shuffle(data)
+
+        d0 = data[0]
+        d1 = data[1]
+        if not freeze:
+            length = d1.shape[0]
+            indices = np.arange(length)
+            np.random.shuffle(indices)
+            d0 = d0[indices, ]
+            d1 = d1[indices, ]
 
         # for each item in the dataset
-        for d, truth in zip(data[0], data[1]):
+        # for d, truth in zip(data[0], data[1]):
+        for d, truth in zip(d0, d1):
 
             #####################
             # FORWARD PROPAGATION
@@ -182,13 +193,12 @@ class NeuralNetwork:
             # "For each node j in the hidden layer (i = input layer)
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
-            self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
+            self.hidden_layer = self.sigmoid(self.hidden_layer)
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
-            self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
-
+            self.output_layer = self.sigmoid(self.output_layer)
 
             ##################
             # BACK-PROPAGATION
