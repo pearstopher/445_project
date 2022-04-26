@@ -27,25 +27,28 @@ from matplotlib import pyplot as plt
 from math import exp
 import scipy.io.wavfile as wf
 
-SAMPLES = 50
+SAMPLES = 100
 # make sure OFFSET * OFFSET_LOOPS isn't bigger than data array
-OFFSET = 2000  # 20  # 61*4
-OFFSET_LOOPS = 2
+OFFSET = 20  # 20  # 61*4
+OFFSET_LOOPS = 1000
 # 88*100 = 8800
 # 88*1000 = 88000 = 70400/17600
+
+# limit number of input files
+MAX_FILES = 1
 
 
 # "Set the learning rate to 0.1 and the momentum to 0.9.
 ETA = 0.1
-MOMENTUM = 0
+MOMENTUM = 0.7
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 10000
+MAX_EPOCHS = 300
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 100
+N = 10
 
 
 # class for loading and preprocessing data
@@ -59,10 +62,16 @@ class Data:
         self.SQUARE_DIR = "audio/square/"  # the square wave is the ground truth
 
         files = os.listdir(self.SINE_DIR)
-        self.sine = np.empty((len(files)*OFFSET_LOOPS, SAMPLES))
-        self.square = np.empty((len(files)*OFFSET_LOOPS, SAMPLES))
+        np.random.shuffle(files)  # don't always want the same file (yet)
+
+        num_files = len(files) if MAX_FILES == 0 else MAX_FILES
+        self.sine = np.empty((num_files*OFFSET_LOOPS, SAMPLES))
+        self.square = np.empty((num_files*OFFSET_LOOPS, SAMPLES))
 
         for i, file in enumerate(files):
+            if MAX_FILES != 0 and i >= MAX_FILES:
+                break
+
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
@@ -154,6 +163,10 @@ class NeuralNetwork:
     def sigmoid(array):
         array = 1 / (1 + np.e ** (- array))
         return array
+    # @staticmethod
+    # def sigmoid(value):
+    #     activation = 1 / (1 + exp(-value))
+    #     return activation
 
     # trying new activation functions
     # @staticmethod
@@ -167,7 +180,7 @@ class NeuralNetwork:
     #
     # data[0] = input data
     # data[1] = truth data
-    def compute_accuracy(self, data, freeze=False):
+    def compute_accuracy(self, data, epoch, freeze=False):
         avg = 0
 
         # randomly shuffle the input and truth arrays (together)
@@ -184,7 +197,7 @@ class NeuralNetwork:
 
         # for each item in the dataset
         # for d, truth in zip(data[0], data[1]):
-        for d, truth in zip(d0, d1):
+        for count, (d, truth) in enumerate(zip(d0, d1)):
 
             #####################
             # FORWARD PROPAGATION
@@ -193,11 +206,13 @@ class NeuralNetwork:
             # "For each node j in the hidden layer (i = input layer)
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
+            # self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
             self.hidden_layer = self.sigmoid(self.hidden_layer)
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
+            # self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
             self.output_layer = self.sigmoid(self.output_layer)
 
             ##################
@@ -238,11 +253,19 @@ class NeuralNetwork:
                     # error = self.sigmoid(h_j) * total
                     hidden_error[j] = error  # oops was appending still
 
+                # decrease eta on a schedule: constant for 100 epochs and then small
+                if epoch <= 100:
+                    schedule_eta = self.eta
+                elif epoch <= 200:
+                    schedule_eta = self.eta / 5
+                else:
+                    schedule_eta = self.eta / 10
+
                 # "Hidden to Output layer: For each weight w_kj
                 # w_kj = w_kj + Δw_kj
                 # Δw_kj = η * δ_k * h_j
                 self.output_layer_weights_change = \
-                    self.eta * (self.hidden_layer.reshape(N+1, 1) @ output_error.reshape(1, self.output_len)) + \
+                    schedule_eta * (self.hidden_layer.reshape(N+1, 1) @ output_error.reshape(1, self.output_len)) + \
                     self.momentum * self.output_layer_weights_change
                 self.output_layer_weights += self.output_layer_weights_change
 
@@ -261,22 +284,23 @@ class NeuralNetwork:
             avg += error
 
         # average error per data point (individual sample)
-        return avg / (len(data[0]) * SAMPLES)
+        total_size = len(data[0])
+        return avg / (total_size * SAMPLES)
 
     def run(self, data, epochs):
         train_accuracy = []
         test_accuracy = []
 
         print("Epoch 0: ", end="")
-        train_accuracy.append(self.compute_accuracy(data.train(), True))
-        test_accuracy.append(self.compute_accuracy(data.test(), True))
+        train_accuracy.append(self.compute_accuracy(data.train(), 0, True))
+        test_accuracy.append(self.compute_accuracy(data.test(), 0, True))
         print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[0]), end="\t")
         print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[0]))
 
         for i in range(epochs):
             print("Epoch " + str(i + 1) + ": ", end="")
-            train_accuracy.append(self.compute_accuracy(data.train()))
-            test_accuracy.append(self.compute_accuracy(data.test(), True))
+            train_accuracy.append(self.compute_accuracy(data.train(), i))
+            test_accuracy.append(self.compute_accuracy(data.test(), i, True))
             print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[i + 1]), end="\t")
             print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[i + 1]))
 
