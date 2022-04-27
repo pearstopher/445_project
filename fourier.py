@@ -9,31 +9,35 @@
 import os
 import numpy as np
 from matplotlib import pyplot as plt
-from math import exp
 import scipy.io.wavfile as wf
+from scipy import signal
 
-SAMPLES = 100
+BINS = 12001
+SAMPLES = BINS
 # make sure OFFSET * OFFSET_LOOPS isn't bigger than data array
-OFFSET = 20  # 20  # 61*4
-OFFSET_LOOPS = 1000
+OFFSET = 1  # 20  # 61*4
+OFFSET_LOOPS = 5
 # 88*100 = 8800
 # 88*1000 = 88000 = 70400/17600
 
 # limit number of input files
 MAX_FILES = 1
 
-
 # "Set the learning rate to 0.1 and the momentum to 0.9.
 ETA = 0.1
 MOMENTUM = 0.7
 
-# "Train your network for 50 epochs"
+# scheduling for eta
+SCHED1 = 100
+SCHED1_DEC = 2  # cut eta by DEC after S1 epochs
+SCHED2 = 200
+SCHED2_DEC = 6  # cut eta by DEC after S2 epochs
+
+# Number of training epochs
 MAX_EPOCHS = 300
 
-# "Experiment 1: Vary number of hidden units.
-# "Do experiments with n = 20, 50, and 100.
-# "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 10
+# Number of hidden units
+N = 50
 
 
 # class for loading and preprocessing data
@@ -50,8 +54,8 @@ class Data:
         np.random.shuffle(files)  # don't always want the same file (yet)
 
         num_files = len(files) if MAX_FILES == 0 else MAX_FILES
-        self.sine = np.empty((num_files*OFFSET_LOOPS, SAMPLES))
-        self.square = np.empty((num_files*OFFSET_LOOPS, SAMPLES))
+        self.sine = np.empty((num_files*OFFSET_LOOPS, BINS), dtype=np.float64)
+        self.square = np.empty((num_files*OFFSET_LOOPS, BINS), dtype=np.float64)
 
         for i, file in enumerate(files):
             if MAX_FILES != 0 and i >= MAX_FILES:
@@ -59,13 +63,27 @@ class Data:
 
             with open(os.path.join(self.SINE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
+
+                # do the stft
+                # apply Short Time Fourier Transform (STFT) to samples
+                fs = 48000
+                f, t, zxx = signal.stft(samples, fs=fs, nperseg=int(fs / 2))
+
                 for j in range(OFFSET_LOOPS):
-                    self.sine[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
+                    bins = zxx[:, j*OFFSET]
+                    self.sine[i*OFFSET_LOOPS + j] = bins.reshape(1, BINS)
 
             with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
+
+                # do the stft
+                # apply Short Time Fourier Transform (STFT) to samples
+                fs = 48000
+                f, t, zxx = signal.stft(samples, fs=fs, nperseg=int(fs / 2))
+
                 for j in range(OFFSET_LOOPS):
-                    self.square[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
+                    bins = zxx[:, j*OFFSET]
+                    self.square[i*OFFSET_LOOPS + j] = bins.reshape(1, BINS)
 
         # 2. preprocess and augment the data
         self.preprocess()
@@ -78,10 +96,11 @@ class Data:
     def test_train_split(self):
         # randomly shuffle the input and truth arrays (together)
         length = self.sine.shape[0]
-        indices = np.arange(length)
-        np.random.shuffle(indices)
-        self.sine = self.sine[indices]
-        self.square = self.square[indices]
+        # shuffling files instead before reading in, cheaper
+        # indices = np.arange(length)
+        # np.random.shuffle(indices)
+        # self.sine = self.sine[indices]
+        # self.square = self.square[indices]
 
         # perform an 80 / 20 split on the shuffled data
         split = int(length*0.8)
@@ -95,8 +114,11 @@ class Data:
     # Preprocessing
     def preprocess(self):
         # normalize data between 0-1
-        self.sine = (self.sine + 2**15) / 2**16
-        self.square = (self.square + 2**15) / 2**16
+        self.sine = abs(((self.sine + 2**15) / 2**16) * 6 - 3)
+        self.square = abs(((self.square + 2**15) / 2**16) * 6 - 3)
+        # normalize = 10000
+        # self.sine = self.sine / normalize
+        # self.square = self.square / normalize
         return
 
     # Augmentation (not yet implemented)
@@ -239,12 +261,12 @@ class NeuralNetwork:
                     hidden_error[j] = error  # oops was appending still
 
                 # decrease eta on a schedule: constant for 100 epochs and then small
-                if epoch <= 100:
+                if epoch <= SCHED1:
                     schedule_eta = self.eta
-                elif epoch <= 200:
-                    schedule_eta = self.eta / 5
+                elif epoch <= SCHED2:
+                    schedule_eta = self.eta / SCHED1_DEC
                 else:
-                    schedule_eta = self.eta / 10
+                    schedule_eta = self.eta / SCHED2_DEC
 
                 # "Hidden to Output layer: For each weight w_kj
                 # w_kj = w_kj + Δw_kj
@@ -313,13 +335,16 @@ class NeuralNetwork:
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
             self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
 
-            samples = (d * 2 ** 16 - 2 ** 15).astype(np.int16)
+            # samples = (d * 2 ** 16 - 2 ** 15).astype(np.int16)
+            samples = d
             wf.write("audio/gen/" + prefix + str(i) + "_a.wav", 48000, samples)
 
-            samples = (self.output_layer * 2 ** 16 - 2 ** 15).astype(np.int16)
+            # samples = (self.output_layer * 2 ** 16 - 2 ** 15).astype(np.int16)
+            samples = self.output_layer
             wf.write("audio/gen/" + prefix + str(i) + "_b.wav", 48000, samples)
 
-            samples = (truth * 2 ** 16 - 2 ** 15).astype(np.int16)
+            # samples = (truth * 2 ** 16 - 2 ** 15).astype(np.int16)
+            samples = truth
             wf.write("audio/gen/" + prefix + str(i) + "_c.wav", 48000, samples)
 
 
