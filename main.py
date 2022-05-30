@@ -26,28 +26,28 @@ from matplotlib import pyplot as plt
 from math import exp
 import scipy.io.wavfile as wf
 
-SAMPLES = 100
+SAMPLES = 500
 # make sure OFFSET * OFFSET_LOOPS isn't bigger than data array
-OFFSET = 20  # 20  # 61*4
-OFFSET_LOOPS = 1000
+OFFSET = 200  # 20  # 61*4
+OFFSET_LOOPS = 100
 # 88*100 = 8800
 # 88*1000 = 88000 = 70400/17600
 
 # limit number of input files
-MAX_FILES = 1
+MAX_FILES = 0  # 0 = no max
 
 
 # "Set the learning rate to 0.1 and the momentum to 0.9.
 ETA = 0.1
-MOMENTUM = 0.7
+MOMENTUM = 0.0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 300
+MAX_EPOCHS = 25
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 10
+N = 500
 
 
 # class for loading and preprocessing data
@@ -57,8 +57,8 @@ class Data:
 
         # 1. read in the audio files
 
-        self.SINE_DIR = "audio/sine/"  # the sine wave is the input
-        self.SQUARE_DIR = "audio/square/"  # the square wave is the ground truth
+        self.SINE_DIR = "audio/square/"  # the sine wave is the input
+        self.SQUARE_DIR = "audio/sine/"  # the square wave is the ground truth
 
         files = os.listdir(self.SINE_DIR)
         np.random.shuffle(files)  # don't always want the same file (yet)

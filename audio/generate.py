@@ -67,7 +67,8 @@ def main():
     # generate the files
 
     # generate sine waves
-    frequencies = np.fromfile("frequencies.txt", sep='\n')
+    # _cut removes lowest 15 frequencies from piano
+    frequencies = np.fromfile("frequencies_cut.txt", sep='\n')
     for i, f in enumerate(frequencies):
         s = Sampler("sine", frequency=f)
         s.write(dirs[0] + str(i + 1) + ".wav")

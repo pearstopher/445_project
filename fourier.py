@@ -5,6 +5,9 @@
 # converting to fourier transform of notes
 # then training on bins instead of samples
 #
+# to do: convert real/imaginary to real + imaginary arrays
+#        or at least save the imaginary part and put it back later
+#
 
 import os
 import numpy as np
