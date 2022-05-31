@@ -56,8 +56,8 @@ def main():
     print("Generating Samples")
 
     # make the directories
-    dirs = ('sine/',
-            'square/',
+    dirs = ('datasets/sine/',
+            'datasets/square/',
             )
     for d in dirs:
         exist = os.path.exists(d)
