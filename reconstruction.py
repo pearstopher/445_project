@@ -8,7 +8,6 @@
 # Arg 2: name of WAV (audio/my_wav.wav)
 #
 
-import os
 import numpy as np
 import scipy.io.wavfile as wf
 import sys
@@ -24,7 +23,9 @@ SAMPLES = 500
 
 # load the wav
 sample_rate, samples = wf.read(sys.argv[2])
+# scale the samples to be in the range (0, 1)
 samples = (samples + 2**15) / 2**16
+
 
 # number of hidden units
 N = len(hidden_layer_weights) - 1  # (bias is extra 1)
