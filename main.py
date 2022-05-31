@@ -42,12 +42,12 @@ ETA = 0.1
 MOMENTUM = 0.0
 
 # "Train your network for 50 epochs"
-MAX_EPOCHS = 25
+MAX_EPOCHS = 50
 
 # "Experiment 1: Vary number of hidden units.
 # "Do experiments with n = 20, 50, and 100.
 # "(Remember to also include a bias unit with weights to every hidden and output node.)
-N = 500
+N = 400
 
 
 # class for loading and preprocessing data
@@ -113,7 +113,7 @@ class Data:
         self.square = (self.square + 2**15) / 2**16
         return
 
-    # Augmentation (not yet implemented)
+    # Augmentation (implemented in header for the moment)
     def augment(self):
         return
 
@@ -303,7 +303,17 @@ class NeuralNetwork:
             print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[i + 1]), end="\t")
             print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[i + 1]))
 
+            self.save_model(i)  # save the model so we don't always have to do this again
+
         return train_accuracy, test_accuracy
+
+    def save_model(self, epoch):
+        s = str(SAMPLES)
+        n = str(N)
+        e = str(epoch + 1)
+        # saving the model really just means saving the weights
+        np.savez("models/samples" + s + "_hidden" + n + "_epoch" + e,
+                 hidden=self.hidden_layer_weights, output=self.output_layer_weights)
 
     def dump_wavs(self, data, prefix):
         sse_avg = 0
