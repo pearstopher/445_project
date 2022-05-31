@@ -34,7 +34,7 @@ N = len(hidden_layer_weights) - 1  # (bias is extra 1)
 # stripped neural network (forward propagation only)
 class NeuralNetwork:
     def __init__(self):
-        print("Initializing neural network...")
+        print("Converting WAV...")
 
         self.input_len = SAMPLES
         self.output_len = SAMPLES
@@ -52,11 +52,6 @@ class NeuralNetwork:
         array = 1 / (1 + np.e ** (- array))
         return array
 
-    # "Compute the accuracy on the training and test sets for this initial set of weights,
-    # "to include in your plot. (Call this “epoch 0”.)
-    #
-    # data[0] = input data
-    # data[1] = truth data
     def run(self, data):
         new_data = np.zeros_like(data)
 
@@ -80,17 +75,21 @@ class NeuralNetwork:
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
             self.output_layer = self.sigmoid(self.output_layer)
 
+            # add the output to the data
             new_data[start:end] += self.output_layer
-
+            # increment the window bounds
             start += SAMPLES//2
             end += SAMPLES//2
 
-        # take the average of all of the doubled-up samples
-        new_data[SAMPLES//2:-SAMPLES//2] /= 2
-        # center the samples
-        new_data -= 0.5
-        new_data *= 2
+        # double the first and last window halves that didn't have overlap
+        new_data[-SAMPLES // 2, SAMPLES//2] *= 2
 
+        # now we need to take the average of all the samples (dividing all by 2)
+        # but we also need to double the samples to scale them correctly! (multiply all by 2)
+
+        # all we actually have to do then is to simply re-center the samples around 0
+        new_data -= 1
+        # and call it a day
         return new_data
 
 
