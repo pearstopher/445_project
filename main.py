@@ -5,25 +5,13 @@
 # one type of sound to another.
 #
 #
-# done:
-#   create fake dataset (pairs of data)
-#   modify network to have an equal number of input and output nodes
-#
-# to do:
-#
-# figure out momentum, make sure it works
-#
-#  make sure network can at least over-fit
-#
-#  train on specific note (1-88)
-#  convert longer file using trained network
-#
 #
 
+
 import os
+import sys
 import numpy as np
 from matplotlib import pyplot as plt
-from math import exp
 import scipy.io.wavfile as wf
 
 SAMPLES = 500
@@ -57,10 +45,10 @@ class Data:
 
         # 1. read in the audio files
 
-        self.SINE_DIR = "audio/square/"  # the sine wave is the input
-        self.SQUARE_DIR = "audio/sine/"  # the square wave is the ground truth
+        self.INPUT_DIR = "audio/" + sys.argv[1] + "/"  # the square wave is the input
+        self.TRUTH_DIR = "audio/" + sys.argv[2] + "/"  # the sine wave is the ground truth
 
-        files = os.listdir(self.SINE_DIR)
+        files = os.listdir(self.INPUT_DIR)
         np.random.shuffle(files)  # don't always want the same file (yet)
 
         num_files = len(files) if MAX_FILES == 0 else MAX_FILES
@@ -71,12 +59,12 @@ class Data:
             if MAX_FILES != 0 and i >= MAX_FILES:
                 break
 
-            with open(os.path.join(self.SINE_DIR, file), 'r') as f:
+            with open(os.path.join(self.INPUT_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
                     self.sine[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
 
-            with open(os.path.join(self.SQUARE_DIR, file), 'r') as f:
+            with open(os.path.join(self.TRUTH_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
                     self.square[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
