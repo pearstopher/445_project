@@ -45,8 +45,8 @@ class Data:
 
         # 1. read in the audio files
 
-        self.INPUT_DIR = "audio/" + sys.argv[1] + "/"  # the square wave is the input
-        self.TRUTH_DIR = "audio/" + sys.argv[2] + "/"  # the sine wave is the ground truth
+        self.INPUT_DIR = "audio/datasets/" + sys.argv[1] + "/"  # the square wave is the input
+        self.TRUTH_DIR = "audio/datasets/" + sys.argv[2] + "/"  # the sine wave is the ground truth
 
         files = os.listdir(self.INPUT_DIR)
         np.random.shuffle(files)  # don't always want the same file (yet)
