@@ -12,6 +12,7 @@ import os
 import numpy as np
 import scipy.io.wavfile as wf
 import sys
+import scipy.signal
 
 
 # load the model
@@ -92,11 +93,31 @@ class NeuralNetwork:
         return new_data
 
 
+# really basic fft-based noise reduction
+# not called since it doesn't really work
+def smooth(result):
+    fs = 48000
+    f, t, zxx = scipy.signal.stft(result, fs=fs, nperseg=fs//2)
+
+    # reduce the amplitudes
+    zxx -= 0.001
+    # zero out negatives
+    zxx[zxx < 0] = 0
+    # raise the amplitudes back up
+    zxx[zxx > 0] += 0.001
+
+    _, result = scipy.signal.istft(zxx, fs)
+    return result
+
+
 def main():
 
     p = NeuralNetwork()
 
     result = p.run(samples)
+
+    # result = smooth(result)
+
     filename = sys.argv[2].split('/')[-1]
 
     wf.write("audio/reconstructed/reconstructed_" + filename, 48000, result)
