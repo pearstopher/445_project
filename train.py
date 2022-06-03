@@ -132,8 +132,16 @@ class Data:
         return self.training_data, self.training_truth
 
 
-# "Your neural network will have 784 inputs, one hidden layer with
-# "n hidden units (where n is a parameter of your program), and 10 output units.
+#####################
+# THE NEURAL NETWORK
+#####################
+
+# This class creates a neural network with the following specifications:
+#   SAMPLES input units
+#   SAMPLES output units
+#   N hidden units
+#
+# The network currently is configured to use the sigmoid activation function
 class NeuralNetwork:
     def __init__(self, eta, momentum):
         print("Initializing neural network...")
@@ -141,56 +149,57 @@ class NeuralNetwork:
         self.eta = eta
         self.momentum = momentum
 
-        # explicitly set the size of these arrays (for matrix multiplication / my own sanity)
-        # input layer:                              1 x 785
-        # hidden layer weights:                     785 x (N + 1)
+        # explicit description of the size of these arrays (for matrix multiplication / my own sanity):
+        #
+        # input layer:                              1 x SAMPLES
+        # hidden layer weights:                     SAMPLES x (N + 1)
         # input layer (dot) hidden layer weights:   1 x (N + 1)
         #
         # hidden layer:                             1 x (N + 1)
-        # output layer weights:                     (N + 1) x 785
-        # hidden layer (dot) output layer weights:  1 x 785
+        # output layer weights:                     (N + 1) x SAMPLES
+        # hidden layer (dot) output layer weights:  1 x SAMPLES
+        #
+        # now, initialize each array to the correct size and initial values:
         self.input_len = SAMPLES
         self.output_len = SAMPLES
-        #
-        #
-        # "Choose small random initial weights, 𝑤! ∈ [−.05, .05]
+
+        # Choose small random initial weights, in the range [−.05, .05]
         self.hidden_layer_weights = np.random.uniform(-0.05, 0.05, (self.input_len, N + 1))
-        self.hidden_layer_weights_change = np.zeros((self.input_len, N + 1))  # save momentum
+        # create a second weight array in which to save the previous weights (for momentum equation)
+        self.hidden_layer_weights_change = np.zeros((self.input_len, N + 1))
         self.hidden_layer = np.zeros((N+1))
-        self.hidden_layer[0] = 1  # bias
+        self.hidden_layer[0] = 1  # set the bias node to 1
         self.output_layer_weights = np.random.uniform(-0.05, 0.05, (N+1, self.output_len))
-        self.output_layer_weights_change = np.zeros((N + 1, self.output_len))  # save momentum
+        # again, create a second weight array to hold previous values for momentum
+        self.output_layer_weights_change = np.zeros((N + 1, self.output_len))
         self.output_layer = np.zeros(self.output_len)
 
     # "The activation function for each hidden and output unit is the sigmoid function
     # σ(z) = 1 / ( 1 + e^(-z) )
     @staticmethod
     def sigmoid(array):
+        # updated to activate the entire array at once!
         array = 1 / (1 + np.e ** (- array))
         return array
-    # @staticmethod
-    # def sigmoid(value):
-    #     activation = 1 / (1 + exp(-value))
-    #     return activation
 
-    # trying new activation functions
+    # saved from one of my other activation functions
     # @staticmethod
     # def softplus(value):
     #     # activation = np.log(1 + np.e**value)  # overflow baby
     #     activation = np.log1p(np.exp(-np.abs(value))) + np.maximum(value, 0)
     #    return activation
 
-    # "Compute the accuracy on the training and test sets for this initial set of weights,
-    # "to include in your plot. (Call this “epoch 0”.)
+    # compute_accuracy contains the main bulk of the network
+    # both forward propagation,
+    # and backpropagation
     #
     # data[0] = input data
     # data[1] = truth data
     def compute_accuracy(self, data, epoch, freeze=False):
         avg = 0
 
-        # randomly shuffle the input and truth arrays (together)
+        # randomly shuffle the input and truth arrays (together!)
         data = np.copy(data)
-
         d0 = data[0]
         d1 = data[1]
         if not freeze:
@@ -211,13 +220,13 @@ class NeuralNetwork:
             # "For each node j in the hidden layer (i = input layer)
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
-            # self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
+            # self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer]) # slow
             self.hidden_layer = self.sigmoid(self.hidden_layer)
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
-            # self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
+            # self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer]) # slow
             self.output_layer = self.sigmoid(self.output_layer)
 
             ##################
@@ -233,13 +242,14 @@ class NeuralNetwork:
                 #
                 # t = true value
                 for k, o_k in enumerate(self.output_layer):
+                    # from assignment 1:
                     # "Set the target value tk for output unit k to 0.9 if the input class is the kth class,
                     # "0.1 otherwise
                     # t_k = 0.9 if truth == k else 0.1  # had truth == o_k instead of truth == the index
 
                     # this has to change since this is not binary classification, truths are not 1 and 0
                     # instead each index of the input has a corresponding truth index
-                    # need to reduce some of squares error across all output units
+                    # so I need to calculate the sum of squares error across all output units
                     t_k = truth[k]
 
                     error = o_k * (1 - o_k) * (t_k - o_k)
@@ -258,7 +268,8 @@ class NeuralNetwork:
                     # error = self.sigmoid(h_j) * total
                     hidden_error[j] = error  # oops was appending still
 
-                # decrease eta on a schedule: constant for 100 epochs and then small
+                # if training for 100+ epochs, decrease eta on a schedule:
+                #   eta remains constant for 100 epochs and then get smaller:
                 if epoch <= 100:
                     schedule_eta = self.eta
                 elif epoch <= 200:
@@ -285,23 +296,26 @@ class NeuralNetwork:
             error = np.sum(abs(self.output_layer - truth))
 
             # add the error to the total accuracy
-            # accuracy += np.sum(abs(output_error))
             avg += error
 
-        # average error per data point (individual sample)
+        # calculate the average error per data point (data point = individual sample)
         total_size = len(data[0])
         return avg / (total_size * SAMPLES)
 
+    # main (public) function which calls the network training function for each of the
+    # specified epochs of training
     def run(self, data, epochs):
         train_accuracy = []
         test_accuracy = []
 
+        # Before the training starts, display the error for the untrained network
         print("Epoch 0: ", end="")
         train_accuracy.append(self.compute_accuracy(data.train(), 0, True))
         test_accuracy.append(self.compute_accuracy(data.test(), 0, True))
         print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[0]), end="\t")
         print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[0]))
 
+        # Then begin training the network and printing the error after each epoch
         for i in range(epochs):
             print("Epoch " + str(i + 1) + ": ", end="")
             train_accuracy.append(self.compute_accuracy(data.train(), i))
@@ -309,10 +323,13 @@ class NeuralNetwork:
             print("Training Set:\tError:", "{:0.5f}".format(train_accuracy[i + 1]), end="\t")
             print("Testing Set:\tError:", "{:0.5f}".format(test_accuracy[i + 1]))
 
-            self.save_model(i)  # save the model so we don't always have to do this again
+            # save the model after each epoch
+            # (I'm just picking the best one manually and deleting the ones I don't need)
+            self.save_model(i)
 
         return train_accuracy, test_accuracy
 
+    # function to save a trained model so that it can be loaded later
     def save_model(self, epoch):
         s = str(SAMPLES)
         n = str(N)
@@ -321,17 +338,17 @@ class NeuralNetwork:
         np.savez("models/samples" + s + "_hidden" + n + "_epoch" + e,
                  hidden=self.hidden_layer_weights, output=self.output_layer_weights)
 
+    # this function outputs some WAV files of the testing and training data into a
+    # folder called /gen/. These files can be analyzed with SoX or Audacity to create
+    # spectrograms or to observe the network's progress while testing the program.
     def dump_wavs(self, data, prefix):
-        sse_avg = 0
 
-        # for each item in the dataset
+        # loop for 5 random dataset elements
         for i, (d, truth) in enumerate(zip(data[0], data[1])):
             if i > 4:
                 break
 
-            #####################
-            # FORWARD PROPAGATION
-            #####################
+            # use forward propagation to convert the data item on the current version of the network
 
             # "For each node j in the hidden layer (i = input layer)
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
@@ -343,14 +360,23 @@ class NeuralNetwork:
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
             self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
 
+            # for each data item, save three short WAV files
+
+            # 1. the input file
             samples = (d * 2 ** 16 - 2 ** 15).astype(np.int16)
             wf.write("audio/gen/" + prefix + str(i) + "_a.wav", 48000, samples)
 
+            # 2. the output file (the network's approximation so far)
             samples = (self.output_layer * 2 ** 16 - 2 ** 15).astype(np.int16)
             wf.write("audio/gen/" + prefix + str(i) + "_b.wav", 48000, samples)
 
+            # 3. the truth file
             samples = (truth * 2 ** 16 - 2 ** 15).astype(np.int16)
             wf.write("audio/gen/" + prefix + str(i) + "_c.wav", 48000, samples)
+
+            # analyzing these three files together (input, output, truth) will make it
+            # easy to see how the network is performing visually. This is how I generated
+            # some of the images in the program write-up.
 
 
 def main():
