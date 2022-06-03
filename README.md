@@ -24,7 +24,7 @@ main files included in the repository:
 In order to run the program you first need to install the required libraries.
 
 ```shell
-> python -m pip install numpy scipy matplotlib
+python -m pip install numpy scipy matplotlib
 ```
 
 
@@ -35,7 +35,7 @@ of WAV files containing sine and square waves. (The generation script is located
 in the `audio` directory.)
 
 ```shell
-> python audio/generate.py
+python audio/generate.py
 ```
 
 The second dataset has already been generated using sampled instruments provided
@@ -53,13 +53,13 @@ output which the network will be attempting to approximate.
 1. Train the network to convert square wave samples to sine wave samples:
 
 ```shell
-> python train.py square sine
+python train.py square sine
 ```
 
 2. Train the network to convert piano samples to stringed instrument samples.
 
 ```shell
-> python train.py piano strings
+python train.py piano strings
 ```
 
 After each epoch of training, the weights for the trained network are saved in
@@ -75,7 +75,7 @@ two arguments: a trained model, and a WAV file to be converted.
 
 
 ```shell
-> python convert.py models/examples/samples500_hidden400_epoch48.npz audio/examples/square.wav
+python convert.py models/examples/samples500_hidden400_epoch48.npz audio/examples/square.wav
 ```
 
 The converted file will be located in the `audio/converted` directory, and it 
