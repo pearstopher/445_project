@@ -82,7 +82,7 @@ The converted file will be located in the `audio/converted` directory, and it
 will have `converted_` prepended to the original filename.
 
 
-## Examples
+## Usage Examples
 
 Here are a few examples which can be copy/pasted in order to test out the network
 without exerting too much effort.
