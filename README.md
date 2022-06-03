@@ -87,17 +87,23 @@ will have `converted_` prepended to the original filename.
 Here are a few examples which can be copy/pasted in order to test out the network
 without exerting too much effort.
 
-1. Convert a square wave to a sine wave with a pre-trained model.
+1. Convert a single square wave to a sine wave with a pre-trained model.
 
 ```shell
-python3 convert.py models/examples/samples500_hidden_400_epoch48.npz audio/examples/square.wav
+python convert.py models/examples/samples500_hidden_400_epoch48.npz audio/examples/square.wav
 ls audio/converted/converted_square.wav  # play, analyze, etc
 ```
 
-2. Train a fresh network on Dataset #2 and convert a sample piano WAV.
+2. Use a pre-trained model to convert a melody of notes from square to sine waves.
+```shell
+python convert.py models/examples/samples500_hidden_400_epoch48.npz audio/examples/10s.wav
+ls audio/converted/converted_10s.wav  # play, analyze, etc
+```
+
+4. Train a fresh network on Dataset #2 and convert a sample piano WAV.
 ```shell
 python train.py piano strings
-python3 convert.py models/samples500_hidden400_epoch50.npz audio/examples/piano_test.wav
+python convert.py models/samples500_hidden400_epoch50.npz audio/examples/piano_test.wav
 ls audio/converted/converted_piano_test.wav  # play, analyze, etc
 ```
 
