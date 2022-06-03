@@ -108,4 +108,30 @@ ls audio/converted/converted_piano_test.wav  # play, analyze, etc
 # the results from this one shouldn't be too surprising after reading the writeup!
 ```
 
+# Future Goals (`fourier.py`)
+
+As I mentioned in the write-up, I still have a lot of work to do. Currently I am
+working on re-creating my program so that it uses the fourier transform as part
+of the preprocessing phase. This will enable my network to be able to work directly
+on the frequency data. Honestly there is lot more I could add here, my main reason
+for stopping short is just that my write-up is already longer than it's supposed to 
+be, just accounting for the work which I have accomplished so far!
+
+Since `fourier.py` is based on `train.py` it can be called similarly:
+
+```shell
+python fourier.py piano strings
+```
+
+If you run the above command, you can see the network happily begins to train itself
+on the fourier transform data which it generates from the WAV files in the dataset. 
+The training is pretty successful, as shown briefly at the end of my write-up. 
+Currently, I have not finished implementing an updated version of `convert.py`. 
+This is because I am still working on solving the problem of how to correctly
+resynthesize the modified FFT data. Although I still have a lot to learn, I am 
+encouraged that this updated version of the network seems to be performing really 
+well on the FFT data so far. If I've learned anything from studying Phase Vocoders
+and implementing FFT-based pitch shifting algorithms, it's that taking FFT
+data apart is easy, but putting it back together is always tougher than you expect.
+
 
