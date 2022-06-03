@@ -4,9 +4,13 @@
 # The end goal of this project is to create a neural network which can transform
 # one type of sound to another.
 #
-#
+# This file contains a neural network which can be trained on datasets from the
+# /audio/datasets directory.
 #
 
+###########
+# INCLUDES
+###########
 
 import os
 import sys
@@ -14,27 +18,32 @@ import numpy as np
 from matplotlib import pyplot as plt
 import scipy.io.wavfile as wf
 
+############
+# CONSTANTS
+############
+
+# each item in the dataset will have a size of 500 samples
 SAMPLES = 500
-# make sure OFFSET * OFFSET_LOOPS isn't bigger than data array
-OFFSET = 200  # 20  # 61*4
+
+# during data augmentation, the program will step through each file in the dataset, creating multiple data entries.
+# OFFSET is the step size
+# OFFSET_LOOPS is the number of steps (and therefore the number of entries which will be created for each file)
+OFFSET = 200
 OFFSET_LOOPS = 100
-# 88*100 = 8800
-# 88*1000 = 88000 = 70400/17600
+# make sure OFFSET * OFFSET_LOOPS does not exceed the total number of samples in each input file.
 
-# limit number of input files
-MAX_FILES = 0  # 0 = no max
+# If desired, limit the number of input files. If set to 0, the whole dataset will be loaded.
+MAX_FILES = 0
 
 
-# "Set the learning rate to 0.1 and the momentum to 0.9.
+# Set the learning rate (ETA) and the momentum value.
 ETA = 0.1
 MOMENTUM = 0.0
 
-# "Train your network for 50 epochs"
+# Set the number of epochs to run the program
 MAX_EPOCHS = 50
 
-# "Experiment 1: Vary number of hidden units.
-# "Do experiments with n = 20, 50, and 100.
-# "(Remember to also include a bias unit with weights to every hidden and output node.)
+# Set the number of hidden units (not counting the bias unit).
 N = 400
 
 
