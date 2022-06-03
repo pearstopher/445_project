@@ -105,6 +105,7 @@ ls audio/converted/converted_10s.wav  # play, analyze, etc
 python train.py piano strings
 python convert.py models/samples500_hidden400_epoch50.npz audio/examples/piano_test.wav
 ls audio/converted/converted_piano_test.wav  # play, analyze, etc
+# the results from this one shouldn't be too surprising after reading the writeup!
 ```
 
 
