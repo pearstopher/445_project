@@ -116,7 +116,8 @@ working on re-creating my program so that it uses the fourier transform as part
 of the preprocessing phase. This will enable my network to be able to work directly
 on the frequency data. Honestly there is lot more I could add here, my main reason
 for stopping short is just that my write-up is already longer than it's supposed to 
-be, just accounting for the work which I have accomplished so far!
+be, just accounting for the work which I have accomplished so far! This is something
+that I'm going to continue experimenting with over the summer.
 
 Since `fourier.py` is based on `train.py` it can be called similarly:
 
