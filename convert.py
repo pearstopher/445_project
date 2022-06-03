@@ -120,7 +120,7 @@ def main():
 
     filename = sys.argv[2].split('/')[-1]
 
-    wf.write("audio/reconstructed/reconstructed_" + filename, 48000, result)
+    wf.write("audio/converted/converted_" + filename, 48000, result)
 
 
 if __name__ == '__main__':
