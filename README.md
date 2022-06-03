@@ -117,7 +117,7 @@ of the preprocessing phase. This will enable my network to be able to work direc
 on the frequency data. Honestly there is lot more I could add here, my main reason
 for stopping short is just that my write-up is already longer than it's supposed to 
 be, just accounting for the work which I have accomplished so far! This is something
-that I'm going to continue experimenting with over the summer.
+that I'm going to continue experimenting with over the summer for sure.
 
 Since `fourier.py` is based on `train.py` it can be called similarly:
 
