@@ -47,71 +47,80 @@ MAX_EPOCHS = 50
 N = 400
 
 
-# class for loading and preprocessing data
-# data is contained in a numpy array
+###################
+# LOADING THE DATA
+###################
+
+# class for loading, preprocessing, and augmenting the data
 class Data:
     def __init__(self):
 
         # 1. read in the audio files
-
         self.INPUT_DIR = "audio/datasets/" + sys.argv[1] + "/"  # the square wave is the input
         self.TRUTH_DIR = "audio/datasets/" + sys.argv[2] + "/"  # the sine wave is the ground truth
 
+        # 2. randomly order the files
         files = os.listdir(self.INPUT_DIR)
-        np.random.shuffle(files)  # don't always want the same file (yet)
+        np.random.shuffle(files)
 
+        # 3. load the correct number of files
         num_files = len(files) if MAX_FILES == 0 else MAX_FILES
-        self.sine = np.empty((num_files*OFFSET_LOOPS, SAMPLES))
-        self.square = np.empty((num_files*OFFSET_LOOPS, SAMPLES))
-
+        self.input = np.empty((num_files * OFFSET_LOOPS, SAMPLES))
+        self.truth = np.empty((num_files * OFFSET_LOOPS, SAMPLES))
         for i, file in enumerate(files):
             if MAX_FILES != 0 and i >= MAX_FILES:
                 break
 
+            # 4. for each input file, loop through and create a series of data items
             with open(os.path.join(self.INPUT_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
-                    self.sine[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
+                    self.input[i * OFFSET_LOOPS + j] = samples[0 + j * OFFSET:SAMPLES + j * OFFSET].reshape(1, SAMPLES)
 
+            # 5. for each truth file, loop and create a series of matching data items
             with open(os.path.join(self.TRUTH_DIR, file), 'r') as f:
                 _, samples = wf.read(f.name)
                 for j in range(OFFSET_LOOPS):
-                    self.square[i*OFFSET_LOOPS + j] = samples[0 + j*OFFSET:SAMPLES + j*OFFSET].reshape(1, SAMPLES)
+                    self.truth[i * OFFSET_LOOPS + j] = samples[0 + j * OFFSET:SAMPLES + j * OFFSET].reshape(1, SAMPLES)
 
-        # 2. preprocess and augment the data
+        # 6. preprocess and augment the data
         self.preprocess()
         self.augment()
 
-        # 3. split the data into a testing and training set
+        # 7. split the finished data into a testing and training set
         self.training_data, self.training_truth, \
             self.testing_data, self.testing_truth = self.test_train_split()
 
+    # split the data into testing and training set
     def test_train_split(self):
         # randomly shuffle the input and truth arrays (together)
-        length = self.sine.shape[0]
+        length = self.input.shape[0]
         indices = np.arange(length)
         np.random.shuffle(indices)
-        self.sine = self.sine[indices]
-        self.square = self.square[indices]
+        self.input = self.input[indices]
+        self.truth = self.truth[indices]
 
         # perform an 80 / 20 split on the shuffled data
         split = int(length*0.8)
-        training_data = self.sine[0:split, :]
-        testing_data = self.sine[split:, :]
-        training_truth = self.square[0:split, :]
-        testing_truth = self.square[split:, :]
+        training_data = self.input[0:split, :]
+        testing_data = self.input[split:, :]
+        training_truth = self.truth[0:split, :]
+        testing_truth = self.truth[split:, :]
 
         return training_data, training_truth, testing_data, testing_truth
 
-    # Preprocessing
+    # preprocess the data
     def preprocess(self):
-        # normalize data between 0-1
-        self.sine = (self.sine + 2**15) / 2**16
-        self.square = (self.square + 2**15) / 2**16
+        # normalize the data to be in the range (0, 1)
+        self.input = (self.input + 2 ** 15) / 2 ** 16
+        self.truth = (self.truth + 2 ** 15) / 2 ** 16
+        # (this matches the range of values supported by the activation function)
         return
 
-    # Augmentation (implemented in header for the moment)
+    # augment the data
     def augment(self):
+        # currently all of the data augmentation is done as the data is loaded
+        # however there are plenty of ways I could augment further if necessary
         return
 
     # return the testing dataset
