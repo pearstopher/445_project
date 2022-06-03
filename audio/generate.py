@@ -56,8 +56,8 @@ def main():
     print("Generating Samples")
 
     # make the directories
-    dirs = ('datasets/sine/',
-            'datasets/square/',
+    dirs = ('audio/datasets/sine/',
+            'audio/datasets/square/',
             )
     for d in dirs:
         exist = os.path.exists(d)
@@ -68,7 +68,7 @@ def main():
 
     # generate sine waves
     # _cut removes lowest 15 frequencies from piano
-    frequencies = np.fromfile("frequencies.txt", sep='\n')
+    frequencies = np.fromfile("audio/frequencies.txt", sep='\n')
     for i, f in enumerate(frequencies):
         s = Sampler("sine", frequency=f)
         s.write(dirs[0] + str(i + 1) + ".wav")
