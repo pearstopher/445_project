@@ -90,13 +90,13 @@ without exerting too much effort.
 1. Convert a single square wave to a sine wave with a pre-trained model.
 
 ```shell
-python convert.py models/examples/samples500_hidden_400_epoch48.npz audio/examples/square.wav
+python convert.py models/examples/samples500_hidden400_epoch48.npz audio/examples/square.wav
 ls audio/converted/converted_square.wav  # play, analyze, etc
 ```
 
 2. Use a pre-trained model to convert a melody of notes from square to sine waves.
 ```shell
-python convert.py models/examples/samples500_hidden_400_epoch48.npz audio/examples/10s.wav
+python convert.py models/examples/samples500_hidden400_epoch48.npz audio/examples/10s.wav
 ls audio/converted/converted_10s.wav  # play, analyze, etc
 ```
 
