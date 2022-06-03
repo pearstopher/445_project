@@ -90,14 +90,14 @@ without exerting too much effort.
 1. Convert a square wave to a sine wave with a pre-trained model.
 
 ```shell
-python3 convert models/examples/samples500_hidden_400_epoch48.npz audio/examples/square.wav
+python3 convert.py models/examples/samples500_hidden_400_epoch48.npz audio/examples/square.wav
 ls audio/converted/converted_square.wav  # play, analyze, etc
 ```
 
 2. Train a fresh network on Dataset #2 and convert a sample piano WAV.
 ```shell
 python train.py piano strings
-python3 convert models/samples500_hidden_400_epoch50.npz audio/examples/piano_test.wav
+python3 convert.py models/samples500_hidden400_epoch50.npz audio/examples/piano_test.wav
 ls audio/converted/converted_piano_test.wav  # play, analyze, etc
 ```
 
