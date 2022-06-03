@@ -8,6 +8,7 @@
 # Arg 2: name of WAV (audio/my_wav.wav)
 #
 
+import os
 import numpy as np
 import scipy.io.wavfile as wf
 import sys
@@ -119,6 +120,9 @@ def main():
     # result = smooth(result)
 
     filename = sys.argv[2].split('/')[-1]
+
+    if not os.path.exists('audio/converted'):
+        os.makedirs('audio/converted')
 
     wf.write("audio/converted/converted_" + filename, 48000, result)
 
