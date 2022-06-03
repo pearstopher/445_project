@@ -67,7 +67,7 @@ the `models` directory. After the training is complete, any of these models can
 then be loaded and used to convert audio files from one sound to another.
 
 
-#### Converting Files (`convert.py`)
+## Converting Files (`convert.py`)
 
 In order to convert audio files with a trained network model, I have provided a 
 third and final script. In order to run this script, you simply need to provide
