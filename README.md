@@ -110,7 +110,8 @@ ls audio/converted/converted_piano_test.wav  # play, analyze, etc
 
 # Future Goals (`fourier.py`)
 
-As I mentioned in the write-up, I still have a lot of work to do. Currently I am
+As I mentioned in the write-up, I still have a lot of work to do if I want my network
+to perform as well on real instruments as it does on sine/square waves. Currently, I am
 working on re-creating my program so that it uses the fourier transform as part
 of the preprocessing phase. This will enable my network to be able to work directly
 on the frequency data. Honestly there is lot more I could add here, my main reason
