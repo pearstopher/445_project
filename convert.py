@@ -2,7 +2,7 @@
 # Christopher Juncker
 #
 # This file is used to run a specified WAV file through a trained network
-# The reconstructed modified samples are saved in audio/reconstructed/.
+# The reconstructed modified samples are saved in audio/converted/.
 #
 # Arg 1: name of model (models/my_model.npz)
 # Arg 2: name of WAV (audio/my_wav.wav)
@@ -12,14 +12,15 @@ import os
 import numpy as np
 import scipy.io.wavfile as wf
 import sys
-import scipy.signal
 
 
 # load the model
 model = np.load(sys.argv[1])
 hidden_layer_weights = model['hidden']
 output_layer_weights = model['output']
-SAMPLES = 500
+# I could deduce the number of samples from the weights,
+# but for now I'm just getting it from the filename
+SAMPLES = int(''.join(filter(str.isdigit, sys.argv[1].split("_")[0])))
 
 
 # load the wav
