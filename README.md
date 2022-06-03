@@ -32,7 +32,7 @@ python -m pip install numpy scipy matplotlib
 
 Before running the main program, you will need to generate the first dataset
 of WAV files containing sine and square waves. The generation script is located
-in the `audio` directory - just run this command fromm the main directory.
+in the `audio` directory - just run this command from the main directory.
 
 ```shell
 python audio/generate.py
