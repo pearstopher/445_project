@@ -1,6 +1,10 @@
 # Audio Data Generator
 # CS455 Term Project
 # Christopher Juncker
+#
+# Running this file will generate the first dataset, which is a collection of short
+# WAV files containing sine and square waves at a variety of different frequencies.
+#
 
 import os
 import numpy as np
