@@ -94,20 +94,10 @@ class NeuralNetwork:
         return new_data
 
 
-# really basic fft-based noise reduction
-# not called since it doesn't really work
+# smooth the output samples just a little bit to reduce extreme high-frequency noise
 def smooth(result):
-    fs = 48000
-    f, t, zxx = scipy.signal.stft(result, fs=fs, nperseg=fs//2)
-
-    # reduce the amplitudes
-    zxx -= 0.001
-    # zero out negatives
-    zxx[zxx < 0] = 0
-    # raise the amplitudes back up
-    zxx[zxx > 0] += 0.001
-
-    _, result = scipy.signal.istft(zxx, fs)
+    smoothness = 3
+    result = np.convolve(result, np.ones(smoothness)/smoothness, mode='valid')
     return result
 
 
@@ -117,7 +107,7 @@ def main():
 
     result = p.run(samples)
 
-    # result = smooth(result)
+    result = smooth(result)
 
     filename = sys.argv[2].split('/')[-1]
 
