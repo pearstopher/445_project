@@ -4,7 +4,7 @@
 # The end goal of this project is to create a neural network which can transform
 # one type of sound to another.
 #
-# This file contains a neural network which can be trained on datasets from the
+# This file contains the code for a neural network which can be trained on datasets from the
 # /audio/datasets directory.
 #
 
