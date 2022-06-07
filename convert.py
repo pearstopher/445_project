@@ -90,7 +90,7 @@ class NeuralNetwork:
             end += SAMPLES//2
 
         # double the first and last window halves that didn't have overlap
-        new_data[-SAMPLES // 2:SAMPLES//2] *= 2
+        new_data[-SAMPLES//2:SAMPLES//2] *= 2
 
         # now we need to take the average of all the samples (dividing all by 2)
         # but we also need to double the samples to scale them correctly! (multiply all by 2)
