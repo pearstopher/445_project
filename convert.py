@@ -47,11 +47,17 @@ class NeuralNetwork:
         self.output_layer_weights = output_layer_weights
         self.output_layer = np.zeros(self.output_len)
 
-    # "The activation function for each hidden and output unit is the sigmoid function
+    # The activation function for each output unit is the sigmoid function
     # σ(z) = 1 / ( 1 + e^(-z) )
     @staticmethod
     def sigmoid(array):
         array = 1 / (1 + np.e ** (- array))
+        return array
+
+    # The activation function for each hidden unit is the Leaky ReLU function
+    @staticmethod
+    def leakyrelu(array):
+        array[array < 0] *= 0.05
         return array
 
     def run(self, data):
@@ -70,7 +76,7 @@ class NeuralNetwork:
             # "For each node j in the hidden layer (i = input layer)
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
-            self.hidden_layer = self.sigmoid(self.hidden_layer)
+            self.hidden_layer = self.leakyrelu(self.hidden_layer)
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )

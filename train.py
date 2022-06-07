@@ -33,7 +33,7 @@ OFFSET_LOOPS = 100
 # make sure OFFSET * OFFSET_LOOPS does not exceed the total number of samples in each input file.
 
 # If desired, limit the number of input files. If set to 0, the whole dataset will be loaded.
-MAX_FILES = 10
+MAX_FILES = 0
 
 
 # Set the learning rate (ETA) and the momentum value.
@@ -194,6 +194,7 @@ class NeuralNetwork:
         array[array < 0] = 0
         return array
 
+    # The activation function for each hidden unit is the Leaky ReLU function
     @staticmethod
     def leakyrelu(array):
         # just like relu except it leaks a little
