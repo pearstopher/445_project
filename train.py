@@ -33,7 +33,7 @@ OFFSET_LOOPS = 100
 # make sure OFFSET * OFFSET_LOOPS does not exceed the total number of samples in each input file.
 
 # If desired, limit the number of input files. If set to 0, the whole dataset will be loaded.
-MAX_FILES = 0
+MAX_FILES = 10
 
 
 # Set the learning rate (ETA) and the momentum value.
@@ -194,6 +194,12 @@ class NeuralNetwork:
         array[array < 0] = 0
         return array
 
+    @staticmethod
+    def leakyrelu(array):
+        # just like relu except it leaks a little
+        array[array < 0] *= 0.05
+        return array
+
     # compute_accuracy contains the main bulk of the network
     # both forward propagation,
     # and backpropagation
@@ -226,7 +232,7 @@ class NeuralNetwork:
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
             # self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer]) # slow
-            self.hidden_layer = self.sigmoid(self.hidden_layer)
+            self.hidden_layer = self.leakyrelu(self.hidden_layer)
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
@@ -269,8 +275,11 @@ class NeuralNetwork:
                     #    total += self.output_layer_weights[j][k] * output_error[k]
                     total = np.dot(self.output_layer_weights[j], output_error)
 
-                    error = h_j * (1 - h_j) * total
+                    # error = h_j * (1 - h_j) * total  # (for sigmoid)
+                    # error = total if h_j > 0 else 0  # (for reLU)
+                    error = total if h_j > 0 else 0.05*total  # (for leaky reLU)
                     # error = self.sigmoid(h_j) * total
+
                     hidden_error[j] = error  # oops was appending still
 
                 # if training for 100+ epochs, decrease eta on a schedule:
@@ -358,12 +367,12 @@ class NeuralNetwork:
             # "For each node j in the hidden layer (i = input layer)
             # h_j = σ ( Σ_i ( w_ji x_i + w_j0 ) )
             self.hidden_layer = np.dot(d, self.hidden_layer_weights)
-            self.hidden_layer = np.array([self.sigmoid(x) for x in self.hidden_layer])
+            self.hidden_layer = self.leakyrelu(self.hidden_layer)
 
             # "For each node k in the output layer (j = hidden layer)
             # o_k = σ ( Σ_j ( w_kj h_j + w_k0 ) )
             self.output_layer = np.dot(self.hidden_layer, self.output_layer_weights)
-            self.output_layer = np.array([self.sigmoid(x) for x in self.output_layer])
+            self.output_layer = self.sigmoid(self.output_layer)
 
             # for each data item, save three short WAV files
 
