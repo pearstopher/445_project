@@ -182,12 +182,17 @@ class NeuralNetwork:
         array = 1 / (1 + np.e ** (- array))
         return array
 
-    # saved from one of my other activation functions
-    # @staticmethod
-    # def softplus(value):
-    #     # activation = np.log(1 + np.e**value)  # overflow baby
-    #     activation = np.log1p(np.exp(-np.abs(value))) + np.maximum(value, 0)
-    #    return activation
+    @staticmethod
+    def softplus(value):
+        # activation = np.log(1 + np.e**value)  # overflow
+        activation = np.log1p(np.exp(-np.abs(value))) + np.maximum(value, 0)
+        return activation
+
+    @staticmethod
+    def relu(array):
+        # ok can't get much simpler than this
+        array[array < 0] = 0
+        return array
 
     # compute_accuracy contains the main bulk of the network
     # both forward propagation,
